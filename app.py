@@ -11,7 +11,7 @@ st.set_page_config(page_title="文体年齢評価", layout="wide")
 st.title("文体の年齢カテゴリ評価フォーム")
 
 # Load question data
-df = pd.read_csv("/streamlit_evaluation_data.csv")
+df = pd.read_csv("streamlit_evaluation_data.csv")
 all_categories = [
     "小学校低学年（6–8歳）",
     "小学校高学年（9–12歳）",
