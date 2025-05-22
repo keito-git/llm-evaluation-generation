@@ -5,6 +5,8 @@ import random
 import io
 import os
 from datetime import datetime
+import requests
+import base64
 
 # Streamlit settings
 st.set_page_config(page_title="文体年齢評価", layout="wide")
@@ -98,3 +100,22 @@ else:
         )
 
         st.dataframe(result_df)
+
+# GASのWebアプリURL
+GAS_URL = "https://script.google.com/macros/s/AKfycbxUzmEUtAmolKUeiyh-KOSvD5sGuSuJEiDDCIzOSRdy5iwzCgOxiJcEPCHIDahC0Mat/exec"
+
+try:
+    # csv_buffer から base64 エンコード
+    b64_csv = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
+
+    # POST送信
+    response = requests.post(GAS_URL, data={"file": b64_csv})
+
+    # 結果を表示
+    if response.status_code == 200:
+        st.success("Google Driveへの自動保存に成功しました！")
+    else:
+        st.warning(f"Google Driveへの保存に失敗しました（{response.status_code}）")
+
+except Exception as e:
+    st.error(f"保存送信時にエラーが発生しました：{e}")
