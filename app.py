@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import random
@@ -30,8 +29,6 @@ if "page" not in st.session_state:
     st.session_state.page = 0
 if "responses" not in st.session_state:
     st.session_state.responses = {}
-
-# Evaluator ID
 if "evaluator_id" not in st.session_state:
     st.session_state.evaluator_id = ""
 
@@ -47,18 +44,22 @@ else:
         row = df.iloc[idx]
         st.subheader(f"質問 {int(row['質問ID'])}: {row['質問文']}")
 
-        used_categories = []
+        # カテゴリと回答をシャッフル
+        entries = [(cat, row[cat]) for cat in all_categories]
+        random.shuffle(entries)
+
         mappings = {}
         columns = st.columns(2)
-        for i, category in enumerate(all_categories):
+        for i, (category, answer) in enumerate(entries):
             col = columns[i % 2]
             with col:
-                st.markdown(f"**文{i+1}**: {row[category]}")
-                choice = st.selectbox(f"この文に最も近いカテゴリを選んでください：", 
-                                     options=[c for c in all_categories if c not in used_categories],
-                                     key=f"q{idx}_a{i}")
-                mappings[f"文{i+1}"] = {"回答": row[category], "カテゴリ": choice}
-                used_categories.append(choice)
+                st.markdown(f"**文{i+1}**: {answer}")
+                choice = st.selectbox(
+                    f"この文に最も近いカテゴリを選んでください：",
+                    options=["選択する"] + all_categories,
+                    key=f"q{idx}_a{i}"
+                )
+                mappings[f"文{i+1}"] = {"回答": answer, "カテゴリ": choice, "正解カテゴリ": category}
 
         if st.button("次へ"):
             st.session_state.responses[int(row["質問ID"])] = mappings
@@ -75,7 +76,8 @@ else:
                     "質問ID": qid,
                     "文番号": i,
                     "文章": res["回答"],
-                    "評価カテゴリ": res["カテゴリ"]
+                    "評価カテゴリ": res["カテゴリ"],
+                    "正解カテゴリ": res["正解カテゴリ"]
                 })
 
         result_df = pd.DataFrame(all_rows)
@@ -90,7 +92,6 @@ else:
 
         st.info(f"評価結果はサーバー上に保存されました: {filepath}")
 
-        # 任意でDLもできるように
         csv_buffer = io.StringIO()
         result_df.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
         st.download_button(
