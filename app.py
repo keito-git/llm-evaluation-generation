@@ -24,7 +24,7 @@ all_categories = [
     "高齢者（65歳以上）"
 ]
 
-# Session state for navigation and responses
+# Session state
 if "page" not in st.session_state:
     st.session_state.page = 0
 if "responses" not in st.session_state:
@@ -44,7 +44,6 @@ else:
         row = df.iloc[idx]
         st.subheader(f"質問 {int(row['質問ID'])}: {row['質問文']}")
 
-        # 一度だけランダム化された文と選択肢を保存
         if f"shuffled_entries_{idx}" not in st.session_state:
             entries = [(cat, row[cat]) for cat in all_categories]
             random.shuffle(entries)
@@ -59,7 +58,6 @@ else:
             with col:
                 st.markdown(f"**文{i+1}**: {answer}")
 
-                # カテゴリ選択肢も固定しておく
                 key_opt = f"options_{idx}_{i}"
                 if key_opt not in st.session_state:
                     st.session_state[key_opt] = random.sample(all_categories, len(all_categories))
@@ -73,8 +71,15 @@ else:
                 mappings[f"文{i+1}"] = {"回答": answer, "カテゴリ": choice, "正解カテゴリ": category}
 
         if st.button("次へ"):
-            st.session_state.responses[int(row["質問ID"])] = mappings
-            st.session_state.page += 1
+            selected_categories = [res["カテゴリ"] for res in mappings.values() if res["カテゴリ"] != "選択する"]
+            if len(selected_categories) != len(set(selected_categories)):
+                st.error("同じカテゴリが複数の文で選ばれています。すべて異なるカテゴリを選んでください。")
+            elif len(selected_categories) < len(mappings):
+                st.error("すべての文についてカテゴリを選択してください。")
+            else:
+                st.session_state.responses[int(row["質問ID"])] = mappings
+                st.session_state.page += 1
+
     else:
         st.success("すべての評価が完了しました。評価結果を保存しました。")
 
