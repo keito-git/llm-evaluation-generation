@@ -44,9 +44,13 @@ else:
         row = df.iloc[idx]
         st.subheader(f"質問 {int(row['質問ID'])}: {row['質問文']}")
 
-        # カテゴリと回答をシャッフル
-        entries = [(cat, row[cat]) for cat in all_categories]
-        random.shuffle(entries)
+        # 一度だけランダム化された文と選択肢を保存
+        if f"shuffled_entries_{idx}" not in st.session_state:
+            entries = [(cat, row[cat]) for cat in all_categories]
+            random.shuffle(entries)
+            st.session_state[f"shuffled_entries_{idx}"] = entries
+        else:
+            entries = st.session_state[f"shuffled_entries_{idx}"]
 
         mappings = {}
         columns = st.columns(2)
@@ -54,9 +58,16 @@ else:
             col = columns[i % 2]
             with col:
                 st.markdown(f"**文{i+1}**: {answer}")
+
+                # カテゴリ選択肢も固定しておく
+                key_opt = f"options_{idx}_{i}"
+                if key_opt not in st.session_state:
+                    st.session_state[key_opt] = random.sample(all_categories, len(all_categories))
+                options = ["選択する"] + st.session_state[key_opt]
+
                 choice = st.selectbox(
                     f"この文に最も近いカテゴリを選んでください：",
-                    options=["選択する"] + all_categories,
+                    options=options,
                     key=f"q{idx}_a{i}"
                 )
                 mappings[f"文{i+1}"] = {"回答": answer, "カテゴリ": choice, "正解カテゴリ": category}
@@ -67,7 +78,6 @@ else:
     else:
         st.success("すべての評価が完了しました。評価結果を保存しました。")
 
-        # 整形してCSVとして出力
         all_rows = []
         for qid, mapping in st.session_state.responses.items():
             for i, (文ID, res) in enumerate(mapping.items(), 1):
@@ -82,7 +92,6 @@ else:
 
         result_df = pd.DataFrame(all_rows)
 
-        # 保存用フォルダとファイル名の作成
         save_dir = "results"
         os.makedirs(save_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -101,7 +110,6 @@ else:
             mime="text/csv"
         )
 
-        # ✅ GASへPOST送信
         GAS_URL = "https://script.google.com/macros/s/AKfycbxUzmEUtAmolKUeiyh-KOSvD5sGuSuJEiDDCIzOSRdy5iwzCgOxiJcEPCHIDahC0Mat/exec"
         try:
             b64_csv = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
