@@ -68,7 +68,19 @@ else:
                     options=options,
                     key=f"q{idx}_a{i}"
                 )
-                mappings[f"文{i+1}"] = {"回答": answer, "カテゴリ": choice, "正解カテゴリ": category}
+
+                validity = st.radio(
+                    f"この文は実際にそのカテゴリの文体として妥当だと思いますか？（文{i+1}）",
+                    options=["はい", "どちらともいえない", "いいえ"],
+                    key=f"valid_{idx}_{i}"
+                )
+
+                mappings[f"文{i+1}"] = {
+                    "回答": answer,
+                    "カテゴリ": choice,
+                    "正解カテゴリ": category,
+                    "妥当性評価": validity
+                }
 
         if st.button("次へ"):
             selected_categories = [res["カテゴリ"] for res in mappings.values() if res["カテゴリ"] != "選択する"]
@@ -92,7 +104,8 @@ else:
                     "文番号": i,
                     "文章": res["回答"],
                     "評価カテゴリ": res["カテゴリ"],
-                    "正解カテゴリ": res["正解カテゴリ"]
+                    "正解カテゴリ": res["正解カテゴリ"],
+                    "妥当性評価": res["妥当性評価"]
                 })
 
         result_df = pd.DataFrame(all_rows)
