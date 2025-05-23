@@ -37,7 +37,7 @@ if "evaluator_id" not in st.session_state:
 
 if st.session_state.page == 0:
     st.header("評価者情報の入力")
-    evaluator_id = st.text_input("あなたの評価者IDを入力してください：", value="")
+    evaluator_id = st.text_input("あなたの年齢を入力してください：", value="")
     if st.button("開始") and evaluator_id:
         st.session_state.evaluator_id = evaluator_id
         st.session_state.page += 1
@@ -84,10 +84,11 @@ else:
         save_dir = "results"
         os.makedirs(save_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{save_dir}/evaluation_{st.session_state.evaluator_id}_{timestamp}.csv"
-        result_df.to_csv(filename, index=False, encoding="utf-8-sig")
+        filename = f"evaluation_{st.session_state.evaluator_id}_{timestamp}.csv"
+        filepath = os.path.join(save_dir, filename)
+        result_df.to_csv(filepath, index=False, encoding="utf-8-sig")
 
-        st.info(f"評価結果はサーバー上に保存されました: {filename}")
+        st.info(f"評価結果はサーバー上に保存されました: {filepath}")
 
         # 任意でDLもできるように
         csv_buffer = io.StringIO()
@@ -95,7 +96,7 @@ else:
         st.download_button(
             label="CSVファイルをダウンロード",
             data=csv_buffer.getvalue(),
-            file_name=f"評価結果_{st.session_state.evaluator_id}.csv",
+            file_name=filename,
             mime="text/csv"
         )
 
@@ -103,7 +104,7 @@ else:
         GAS_URL = "https://script.google.com/macros/s/AKfycbxUzmEUtAmolKUeiyh-KOSvD5sGuSuJEiDDCIzOSRdy5iwzCgOxiJcEPCHIDahC0Mat/exec"
         try:
             b64_csv = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
-            response = requests.post(GAS_URL, data={"file": b64_csv})
+            response = requests.post(GAS_URL, data={"file": b64_csv, "filename": filename})
             if response.status_code == 200:
                 st.success("Google Driveへの自動保存に成功しました！")
             else:
